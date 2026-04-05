@@ -20,14 +20,59 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
+        // Gera a lista de participantes como itens <li>
+        let participantsHTML = "<ul class='participants-list'>";
+        if (details.participants.length > 0) {
+          details.participants.forEach(email => {
+            participantsHTML += `
+              <li class="participant-item">
+                <span class="participant-email">${email}</span>
+                <span class="delete-participant" title="Remover participante" data-activity="${name}" data-email="${email}">&times;</span>
+              </li>`;
+          });
+        } else {
+          participantsHTML += `<li class='no-participants'>Nenhum participante inscrito ainda.</li>`;
+        }
+        participantsHTML += "</ul>";
+
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants-section">
+            <strong>Participantes:</strong>
+            ${participantsHTML}
+          </div>
         `;
 
+
         activitiesList.appendChild(activityCard);
+
+        // Adiciona listeners para os ícones de exclusão
+        setTimeout(() => {
+          const deleteIcons = activityCard.querySelectorAll('.delete-participant');
+          deleteIcons.forEach(icon => {
+            icon.addEventListener('click', async (e) => {
+              const activityName = icon.getAttribute('data-activity');
+              const participantEmail = icon.getAttribute('data-email');
+              try {
+                const response = await fetch(`/activities/${encodeURIComponent(activityName)}/signup?email=${encodeURIComponent(participantEmail)}`, {
+                  method: "DELETE"
+                });
+                if (response.ok) {
+                  // Atualiza a lista de atividades
+                  fetchActivities();
+                } else {
+                  const result = await response.json();
+                  alert(result.detail || "Erro ao remover participante.");
+                }
+              } catch (error) {
+                alert("Erro ao remover participante.");
+              }
+            });
+          });
+        }, 0);
 
         // Add option to select dropdown
         const option = document.createElement("option");
